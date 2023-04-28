@@ -276,5 +276,6 @@ async def scheduler():
 async def on_startup(_):
     asyncio.create_task(scheduler())
 
+#запуск бота и времени
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=False, on_startup=on_startup)
