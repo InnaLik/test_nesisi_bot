@@ -253,17 +253,13 @@ async def check_out_boys():
         text = '\n'.join([f'{i[0]} : {i[1]}' for i in answer_database])
         await bot.send_message(chat_id=472546754, text=f'Общая статистика: \n{text}')
 
-schedule.every().day.at("08:00").do(birthday)
-schedule.every().day.at('11:10').do(send_course)
-schedule.every().day.at('12:00').do(check_apartment)
-schedule.every().monday.at('17:00').do(check_out_boys)
 
 
 
 
 async def scheduler():
     aioschedule.every(1).hours.do(error)
-    aioschedule.every().day.at('09:00').do(greeting())
+    aioschedule.every().day.at('09:00').do(greeting)
     schedule.every().day.at("08:00").do(birthday)
     schedule.every().day.at('11:10').do(send_course)
     schedule.every().day.at('12:00').do(check_apartment)
