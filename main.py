@@ -14,6 +14,8 @@ import asyncio
 import aioschedule
 from aiogram.types import *
 from aiogram import executor
+import logging
+from logging import getLogger
 
 
 with open('token.txt') as file:
@@ -24,8 +26,18 @@ bot: Bot = Bot(token=API_TOKEN)
 dp: Dispatcher = Dispatcher(bot)
 
 # запись лога от уровня INFO и выше в файл py_log.log + записывается время
-logging.basicConfig(level=logging.INFO, filename="py_log.log",
-                    format="%(asctime)s %(levelname)s %(message)s")
+# logger.basicConfig(level=logging.INFO, filename="py_log.log",
+#                    format="%(asctime)s %(levelname)s %(message)s")
+
+async def loggingg():
+    logger = getLogger(__name__)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", filename='py_log.log')
+    logger.info('INF')
+    logger.warning('WAR')
+    logger.error('ERR')
+    logger.critical('CRI')
+
+
 
 
 # Этот хэндлер будет срабатывать на команду "/start"
@@ -260,10 +272,10 @@ async def check_out_boys():
 async def scheduler():
     aioschedule.every(1).hours.do(error)
     aioschedule.every().day.at('09:00').do(greeting)
-    schedule.every().day.at("08:00").do(birthday)
-    schedule.every().day.at('11:10').do(send_course)
-    schedule.every().day.at('12:00').do(check_apartment)
-    schedule.every().friday.at('17:00').do(check_out_boys)
+    aioschedule.every().day.at("08:00").do(birthday)
+    aioschedule.every().day.at('11:10').do(send_course)
+    aioschedule.every().day.at('12:00').do(check_apartment)
+    aioschedule.every().friday.at('17:00').do(check_out_boys)
 
     while True:
         await aioschedule.run_pending()
@@ -271,6 +283,9 @@ async def scheduler():
 #
 async def on_startup(_):
     asyncio.create_task(scheduler())
+    asyncio.create_task(loggingg())
+
+
 
 #запуск бота и времени
 if __name__ == '__main__':
