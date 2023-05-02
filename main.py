@@ -199,31 +199,32 @@ class Clipboard:
 
 
     @staticmethod
-    def get_dollar():
+    async def get_dollar():
         """для получения курса доллара"""
         rates = ExchangeRates(datetime.now())
         return str(rates['USD'].value)[0:5]
 
     @staticmethod
-    def get_ali():
+    async def get_ali():
         """для получения курса али"""
-        tables = pd.read_html('https://helpix.ru/currency/')
+        tables =  pd.read_html('https://helpix.ru/currency/')
         for df in tables:
             if 'Aliexpress.ru' in df.columns:
                 return df.loc[0, 'Aliexpress.ru']
 
     @staticmethod
-    def get_euro():
+    async def get_euro():
         """для получения курса евро"""
         rates = ExchangeRates(datetime.now())
         return str(rates['EUR'].value)[0:5]
 
-    def get_all_course(self):
-        self.course_dollar = self.get_dollar()
-        self.course_euro = self.get_euro()
-        self.course_ali = self.get_ali()
+    async def get_all_course(self):
+        self.course_dollar = await self.get_dollar()
+        self.course_euro = await self.get_euro()
+        self.course_ali = await self.get_ali()
 
-    def get(self):
+
+    async def get(self):
         return f'курс доллара: {self.course_dollar}\n' \
                f'курс евро: {self.course_euro}\n' \
                f'курс али: {self.course_ali}'
@@ -247,7 +248,6 @@ async def birthday():
         answer = await database.execute('SELECT name FROM birthday WHERE date = ?', (dates,))
         answer_database = await answer.fetchone()
         if answer_database != None:
-            print(1)
             await bot.send_message(chat_id=-1001214772818,
                      text=f'Сегодня свой день рождение празднует {answer_database[0]}! Давайте все вместе поздравим его!')
 
@@ -284,6 +284,7 @@ async def scheduler():
     aioschedule.every().day.at('12:00').do(check_apartment)
     aioschedule.every().friday.at('17:00').do(check_out_boys)
     aioschedule.every().hours.do(all_course_class.get_all_course)
+
 
     while True:
         await aioschedule.run_pending()
