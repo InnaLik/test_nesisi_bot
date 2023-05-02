@@ -100,7 +100,7 @@ async def process_del_command(message: Message):
         #сохраняем id фразы, если она была найдена, обязательно в переменну, иначе не сможем через fetch обратиться
         answer = await database.execute('SELECT COUNT(id) from phrases where phrase = ?', (phrase,))
         answer_database = await answer.fetchone()
-        if answer_database != (0,):
+        if answer_database != None:
             await database.execute(f'DELETE FROM phrases WHERE phrase = ?', (phrase,))
             await bot.send_message(message.chat.id, f'фраза "{phrase}" удалена')
         else:
@@ -115,7 +115,7 @@ async def process_add_bad_command(message: Message):
         word = ' '.join(message.text.lower().split()[1:])
         answer = await database.execute(f'SELECT count(name) from NAME where name = ?', (word,))
         answer_database = await answer.fetchone()
-        if answer_database == (0,) and len(word) != 0:
+        if answer_database == None and len(word) != 0:
             await database.execute(f'INSERT INTO bad_words (word) VALUES (?)', (word,))
             await bot.send_message(message.chat.id, f'слово <b>{word}</b> добавлено', parse_mode='html')
         else:
@@ -128,7 +128,7 @@ async def process_del_bad_command(message: Message):
         word = ' '.join(message.text.lower().split()[1:])
         answer = await database.execute(f'SELECT count(id) from bad_words where word = ?', (word,))
         answer_database = await answer.fetchone()
-        if answer_database != (0,):
+        if answer_database != None:
             await database.execute(f'DELETE FROM bad_words WHERE word = ?', (word,))
             await bot.send_message(message.chat.id, f'слово "{word}" удалено')
         else:
@@ -246,9 +246,12 @@ async def birthday():
     async with aiosqlite.connect ('bot_nesibintelk.db') as database:
         answer = await database.execute('SELECT name FROM birthday WHERE date = ?', (dates,))
         answer_database = await answer.fetchone()
-        if answer_database != (0,):
+        if answer_database != None:
+            print(1)
             await bot.send_message(chat_id=-1001214772818,
                      text=f'Сегодня свой день рождение празднует {answer_database[0]}! Давайте все вместе поздравим его!')
+
+
 
 async def greeting():
     await bot.send_message(chat_id=-736597313, text='Доброе утро и хорошего дня!')
@@ -257,13 +260,17 @@ async def greeting():
 async def error():
     await bot.send_message(chat_id=472546754, text='ловим ошибку')
 
-#переделать базу данных
+
 async def check_out_boys():
-    async  with aiosqlite.connect('bot_nesibintelk.db') as databasw:
+    async  with aiosqlite.connect('bot_nesibintelk.db') as database:
+        answer =  await database.execute('SELECT nick, MAX(count) FROM boys')
+        answer_database = await answer.fetchall()
+        await bot.send_message(chat_id=-1001214772818, text=f'Больше всего сообщений с нецензурными словами за последние семь дней поступило от {answer_database[0][0]} в количестве {answer_database[0][1]}')
         answer = await database.execute('Select nick, count from boys ORDER BY 2 DESC')
-        answer_database= await answer.fetchall()
+        answer_database = await answer.fetchall()
         text = '\n'.join([f'{i[0]} : {i[1]}' for i in answer_database])
-        await bot.send_message(chat_id=472546754, text=f'Общая статистика: \n{text}')
+        await bot.send_message(chat_id=-1001214772818, text=f'Общая статистика: \n{text}')
+        await database.execute('UPDATE boys SET count = 0')
 
 
 
@@ -272,10 +279,11 @@ async def check_out_boys():
 async def scheduler():
     aioschedule.every(1).hours.do(error)
     aioschedule.every().day.at('09:00').do(greeting)
-    aioschedule.every().day.at("08:00").do(birthday)
-    aioschedule.every().day.at('11:10').do(send_course)
+    aioschedule.every().day.at("18:42").do(birthday)
+    aioschedule.every().day.at('11:30').do(send_course)
     aioschedule.every().day.at('12:00').do(check_apartment)
     aioschedule.every().friday.at('17:00').do(check_out_boys)
+    aioschedule.every().hours.do(all_course_class.get_all_course)
 
     while True:
         await aioschedule.run_pending()
