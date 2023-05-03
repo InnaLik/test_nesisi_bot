@@ -235,8 +235,10 @@ all_course_class = Clipboard()
 async def send_course():
     # переделать - создать таблицу со всеми чатами, куда отправлять изменения курсак утром + добавить функционал по
     # добавлению групп
-    await bot.send_message(chat_id=-736597313, text=all_course_class.get())
-    await bot.send_message(chat_id=-1001214772818, text=all_course_class.get())
+    await all_course_class.get_all_course()
+    mess = await all_course_class.get()
+    await bot.send_message(chat_id=-736597313, text=mess)
+    await bot.send_message(chat_id=-1001214772818, text=mess)
 
 async def check_apartment():
     if datetime.now().day == 19:
@@ -280,7 +282,7 @@ async def scheduler():
     aioschedule.every(1).hours.do(error)
     aioschedule.every().day.at('09:00').do(greeting)
     aioschedule.every().day.at("18:42").do(birthday)
-    aioschedule.every().day.at('11:30').do(send_course)
+    aioschedule.every().day.at('11:55').do(send_course)
     aioschedule.every().day.at('12:00').do(check_apartment)
     aioschedule.every().friday.at('17:00').do(check_out_boys)
     aioschedule.every().hours.do(all_course_class.get_all_course)
