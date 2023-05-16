@@ -115,7 +115,7 @@ async def process_add_bad_command(message: Message):
         word = ' '.join(message.text.lower().split()[1:])
         answer = await database.execute(f'SELECT count(name) from NAME where name = ?', (word,))
         answer_database = await answer.fetchone()
-        if answer_database == None and len(word) != 0:
+        if answer_database == (0,) and len(word) != 0:
             await database.execute(f'INSERT INTO bad_words (word) VALUES (?)', (word,))
             await bot.send_message(message.chat.id, f'слово <b>{word}</b> добавлено', parse_mode='html')
         else:
