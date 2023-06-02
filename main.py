@@ -16,6 +16,7 @@ from aiogram.types import *
 from aiogram import executor
 import logging
 from logging import getLogger
+import random
 
 
 with open('token.txt') as file:
@@ -100,7 +101,7 @@ async def process_del_command(message: Message):
         #сохраняем id фразы, если она была найдена, обязательно в переменну, иначе не сможем через fetch обратиться
         answer = await database.execute('SELECT COUNT(id) from phrases where phrase = ?', (phrase,))
         answer_database = await answer.fetchone()
-        if answer_database != None:
+        if answer_database != (0,):
             await database.execute(f'DELETE FROM phrases WHERE phrase = ?', (phrase,))
             await bot.send_message(message.chat.id, f'фраза "{phrase}" удалена')
         else:
@@ -128,7 +129,7 @@ async def process_del_bad_command(message: Message):
         word = ' '.join(message.text.lower().split()[1:])
         answer = await database.execute(f'SELECT count(id) from bad_words where word = ?', (word,))
         answer_database = await answer.fetchone()
-        if answer_database != None:
+        if answer_database != (0,):
             await database.execute(f'DELETE FROM bad_words WHERE word = ?', (word,))
             await bot.send_message(message.chat.id, f'слово "{word}" удалено')
         else:
@@ -273,9 +274,61 @@ async def check_out_boys():
         text = '\n'.join([f'{i[0]} : {i[1]}' for i in answer_database])
         await bot.send_message(chat_id=-1001214772818, text=f'Общая статистика: \n{text}')
         await database.execute('UPDATE boys SET count = 0')
+        await database.commit()
 
 
 
+class Random_offers:
+
+    def __init__(self):
+        self.time_masha = 0
+        self.time_turchin = 0
+        self.time_coffee = 0
+        self.message_coffee = f'Идем кофе пить ?'
+        self.message_masha = 'Маша опаздывает'
+        self.message_turchin = 'Турчин заснул'
+        self.time_check = '9:00'
+    async def late_masha(self):
+        hours = random.randrange(1, 11)
+        flag = None
+        message = ''
+        if hours in [9, 10]:
+            flag = False
+            self.message_masha = 'Маша пришла вовремя'
+        else:
+            self.message_masha = 'Маша опаздывает'
+
+
+#что если саму функцию с рандомным временем запускать в 7 утра, чтобы она генерировала время, потом сохранять
+    #это в определенную переменную, которую уже и передавать aioshedule ещё обязательно только в будни запускать, а не каждый день
+    async def coffee(self):
+        hours = random.randint(9, 10)
+        minutes = random.randint(0, 59)
+        self.time_coffee = ':'.join(str(hours).rjust(2,'0'), str(minutes).rjust(2,'0'))
+
+
+
+    async def turchin(self):
+        hours = random.randint(13, 15)
+        minutes = random.randint(0, 59)
+        self.time_turchin = ':'.join(str(hours).rjust(2, '0'), str(minutes).rjust(2, '0'))
+
+    async def turchin_message(self):
+        self.message_turchin = random.choice(['Турчин заснул', 'Турчин работает'])
+
+
+    async def check_class(self):
+        hours = random.randint(9, 9)
+        minutes = random.randint(58, 59)
+        self.time_check = ':'.join([str(hours).rjust(2, '0'), str(minutes).rjust(2, '0')])
+
+    async def check(self):
+        await bot.send_message(chat_id=736597313, text=self.message_turchin)
+
+
+
+
+default = Random_offers()
 
 
 async def scheduler():
@@ -286,6 +339,14 @@ async def scheduler():
     aioschedule.every().day.at('12:00').do(check_apartment)
     aioschedule.every().friday.at('17:00').do(check_out_boys)
     aioschedule.every().hours.do(all_course_class.get_all_course)
+    #как корректно передать время, так как при каждом запуске бота сразу попадает время
+    #schedule.every(5).to(10).seconds.do(my_job)
+    # aioschedule.every().day.at('9:59').do(default.check_class)
+    #
+    # print(default.time_check)
+    # aioschedule.every(5).to(10).second.do(default.check)
+
+
 
 
     while True:
