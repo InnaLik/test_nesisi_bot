@@ -327,7 +327,7 @@ class Random_offers:
 
 
 
-
+#создание класса
 default = Random_offers()
 
 
