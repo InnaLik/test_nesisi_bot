@@ -1,5 +1,4 @@
 import aiosqlite
-
 from aiogram import Bot, Dispatcher
 from aiogram.dispatcher.filters import Command
 from string import punctuation
@@ -14,6 +13,7 @@ from aiogram import executor
 import logging
 from logging import getLogger
 import pyowm
+import db
 
 from chat_id import my, sibintek
 
