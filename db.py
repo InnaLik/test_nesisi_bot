@@ -1,15 +1,18 @@
-from sqlalchemy import create_engine, Column, String, Integer, select
+import asyncio
+
+from sqlalchemy import Column, Integer, String, select
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
-engine = create_engine('sqlite:///bot_nesibintelk.db')
+engine = create_async_engine('sqlite+aiosqlite:///bot_nesibintelk.db', echo=True)
 
 
 class Base(DeclarativeBase):
     pass
 
 
-class NameNotUse(Base):
-    __tablename__ = 'name_not_use'
+class Name(Base):
+    __tablename__ = 'name'
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
@@ -21,7 +24,7 @@ class BadWords(Base):
 
 
 class Birthday(Base):
-    __tablename__ = 'birthday'
+    __tablename__ = 'birthdays'
     id = Column(Integer, primary_key=True)
     name = Column(String)
     date = Column(String)
@@ -35,8 +38,8 @@ class Boys(Base):
     nick = Column(String)
 
 
-class Holiday(Base):
-    __tablename__ = 'holiday'
+class Holidays(Base):
+    __tablename__ = 'holidays'
     id = Column(Integer, primary_key=True)
     date = Column(String)
     celebrate = Column(String)
@@ -46,8 +49,20 @@ class Phrases(Base):
     __tablename__ = 'phrases'
     id = Column(Integer, primary_key=True)
     phrase = Column(String)
+#
+# conn = engine.connect()
+# query = select(Phrases)
+# r = conn.execute(query)
+# print(r.mappings().all())
 
-conn = engine.connect()
-query = select(NameNotUse)
-r = conn.execute(query)
-print(r.mappings().all())
+async def db():
+    async def select_name(async_session:async_sessionmaker[AsyncSession]) -> None:
+        async with async_session() as session:
+            stmt = select(Name)
+            result = await session.execute(stmt)
+            s = result.fetchall()
+            print(s)
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    await select_name(async_session)
+asyncio.run(db())
+
