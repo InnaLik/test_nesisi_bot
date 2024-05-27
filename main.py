@@ -13,6 +13,9 @@ from aiogram import executor
 import logging
 from logging import getLogger
 import pyowm
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 import db
 
 from chat_id import my, sibintek
@@ -46,8 +49,14 @@ async def loggingg():
 @dp.message_handler(Command(commands=["start"]))
 async def process_start_command(message: Message):
     await message.answer(f'Привет, {message}')
-    # await bot.send_message(chat_id='ID или название чата', text='Какой-то текст')
-
+    async def select_name(async_session: async_sessionmaker[AsyncSession]) -> None:
+        async with async_session() as session:
+            stmt = select(db.Name)
+            result = await session.execute(stmt)
+            s = result.fetchall()
+            print(s)
+    async_session = async_sessionmaker(db.engine, expire_on_commit=False)
+    await select_name(async_session)
 
 # при вызове команды help
 @dp.message_handler(Command(commands=["help"]))
