@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import DeclarativeBase
 
 engine = create_async_engine('sqlite+aiosqlite:///bot_nesibintelk.db', echo=True)
+sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
 
 
 class Base(DeclarativeBase):
@@ -20,6 +21,8 @@ class Name(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
+    def __str(self):
+        return f'{self.name}'
 
 class BadWords(Base):
     """
@@ -74,15 +77,3 @@ class Phrases(Base):
 # r = conn.execute(query)
 # print(r.mappings().all())
 
-# создание асинхронной сессии для подключения к бд
-# async def db():
-#     async def select_name(async_session:async_sessionmaker[AsyncSession]) -> None:
-#         async with async_session() as session:
-#             stmt = select(Name)
-#             result = await session.execute(stmt)
-#             s = result.fetchall()
-#             print(s)
-#     async_session = async_sessionmaker(engine, expire_on_commit=False)
-#     await select_name(async_session)
-# asyncio.run(db())
-#

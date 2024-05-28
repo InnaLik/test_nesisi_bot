@@ -14,10 +14,9 @@ import logging
 from logging import getLogger
 import pyowm
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import db
-
 from chat_id import my, sibintek
 
 with open('test_token.txt') as file:
@@ -44,19 +43,14 @@ async def loggingg():
     logger.error('ERR')
     logger.critical('CRI')
 
-
 # Этот хэндлер будет срабатывать на команду "/start"
+
 @dp.message_handler(Command(commands=["start"]))
-async def process_start_command(message: Message):
+async def process_start_command(message: Message, session: AsyncSession):
     await message.answer(f'Привет, {message}')
-    async def select_name(async_session: async_sessionmaker[AsyncSession]) -> None:
-        async with async_session() as session:
-            stmt = select(db.Name)
-            result = await session.execute(stmt)
-            s = result.fetchall()
-            print(s)
-    async_session = async_sessionmaker(db.engine, expire_on_commit=False)
-    await select_name(async_session)
+
+
+
 
 # при вызове команды help
 @dp.message_handler(Command(commands=["help"]))
