@@ -1,20 +1,4 @@
-import aiosqlite
-from aiogram import Bot, Dispatcher
-from aiogram.dispatcher.filters import Command
-from string import punctuation
-from dataclasses import dataclass
-from pycbrf import ExchangeRates
-import pandas as pd
-from datetime import datetime
-import asyncio
-import aioschedule
-from aiogram.types import *
-from aiogram import executor
-import logging
-from logging import getLogger
-import pyowm
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from imports import *
 
 import db
 from chat_id import my, sibintek
@@ -43,13 +27,12 @@ async def loggingg():
     logger.error('ERR')
     logger.critical('CRI')
 
+
 # Этот хэндлер будет срабатывать на команду "/start"
 
 @dp.message_handler(Command(commands=["start"]))
 async def process_start_command(message: Message, session: AsyncSession):
     await message.answer(f'Привет, {message}')
-
-
 
 
 # при вызове команды help
