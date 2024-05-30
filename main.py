@@ -1,6 +1,6 @@
 from imports import *
 
-import db
+
 from chat_id import my, sibintek
 
 with open('test_token.txt') as file:
@@ -31,8 +31,8 @@ async def loggingg():
 # Этот хэндлер будет срабатывать на команду "/start"
 
 @dp.message_handler(Command(commands=["start"]))
-async def process_start_command(message: Message, session: AsyncSession):
-    await message.answer(f'Привет, {message}')
+async def process_start_command(message: Message):
+    await message.answer(f'Привет')
 
 
 # при вызове команды help
