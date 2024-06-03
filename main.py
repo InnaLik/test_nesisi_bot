@@ -15,7 +15,10 @@ from aiogram import Bot, Dispatcher, executor
 from aiogram.dispatcher.filters import Command
 from pycbrf import ExchangeRates
 from aiogram.types import Message
+from sqlalchemy import select
+
 from chat_id import my, sibintek
+import db
 
 with open('test_token.txt', encoding='utf-8') as file:
     API_TOKEN: str = file.read()
@@ -47,6 +50,11 @@ async def process_start_command(message: Message):
     """
     Этот handler будет срабатывать на команду "/start"
     """
+    async with db.engine.connect() as conn:
+        query = select(db.Boys)
+        result = await conn.execute(query)
+        print(result.all())
+
     await message.answer('Привет')
 
 

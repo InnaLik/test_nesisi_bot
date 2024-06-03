@@ -1,12 +1,8 @@
-import asyncio
-from typing import AsyncGenerator
-
 from sqlalchemy import Column, Integer, String, select
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-engine = create_async_engine('sqlite+aiosqlite:///bot_nesibintelk.db', echo=True)
-sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+engine = create_async_engine(url='sqlite+aiosqlite:///bot_nesibintelk.db')
 
 
 class Base(DeclarativeBase):
@@ -23,6 +19,7 @@ class Name(Base):
 
     def __str(self):
         return f'{self.name}'
+
 
 class BadWords(Base):
     """
@@ -71,9 +68,3 @@ class Phrases(Base):
     __tablename__ = 'phrases'
     id = Column(Integer, primary_key=True)
     phrase = Column(String)
-#
-# conn = engine.connect()
-# query = select(Phrases)
-# r = conn.execute(query)
-# print(r.mappings().all())
-
