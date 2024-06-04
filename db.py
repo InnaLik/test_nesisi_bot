@@ -1,8 +1,10 @@
 from sqlalchemy import Column, Integer, String, select
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-engine = create_async_engine(url='sqlite+aiosqlite:///bot_nesibintelk.db')
+engine = create_async_engine(url='sqlite+aiosqlite:///bot_nesibintelk.db',
+                             echo=True)
+async_session = async_sessionmaker(engine)
 
 
 class Base(DeclarativeBase):
@@ -11,14 +13,12 @@ class Base(DeclarativeBase):
 
 class Name(Base):
     """
-    отображение имен участников, чтобы данные имена нельзя было добавить для реагирования
+    отображение имен участников, чтобы данные имена нельзя было добавить
+    для реагирования
     """
     __tablename__ = 'name'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-    def __str(self):
-        return f'{self.name}'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
 
 
 class BadWords(Base):
@@ -26,8 +26,8 @@ class BadWords(Base):
     слова, на которые будет реагировать бот
     """
     __tablename__ = 'bad_words'
-    id = Column(Integer, primary_key=True)
-    word = Column(String)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    word: Mapped[str]
 
 
 class Birthday(Base):
@@ -35,9 +35,9 @@ class Birthday(Base):
     дни рождения участников группы
     """
     __tablename__ = 'birthdays'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    date = Column(String)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    date: Mapped[str]
 
 
 class Boys(Base):
@@ -45,10 +45,10 @@ class Boys(Base):
     количество слов, на которые среагировал бот от каждого участника группы
     """
     __tablename__ = 'boys'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    count = Column(Integer)
-    nick = Column(String)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    count: Mapped[int]
+    nick: Mapped[str]
 
 
 class Holidays(Base):
@@ -56,9 +56,9 @@ class Holidays(Base):
     праздники
     """
     __tablename__ = 'holidays'
-    id = Column(Integer, primary_key=True)
-    date = Column(String)
-    celebrate = Column(String)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    date: Mapped[str]
+    celebrate: Mapped[str]
 
 
 class Phrases(Base):
@@ -66,5 +66,5 @@ class Phrases(Base):
     фразы, которыми бот отвечает
     """
     __tablename__ = 'phrases'
-    id = Column(Integer, primary_key=True)
-    phrase = Column(String)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    phrase: Mapped[str]

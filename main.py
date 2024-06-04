@@ -50,10 +50,10 @@ async def process_start_command(message: Message):
     """
     Этот handler будет срабатывать на команду "/start"
     """
-    async with db.engine.connect() as conn:
-        query = select(db.Boys)
-        result = await conn.execute(query)
-        print(result.all())
+    async with db.async_session() as session:
+        inna = db.Name(name="Anna")
+        session.add(inna)
+        await session.commit()
 
     await message.answer('Привет')
 
