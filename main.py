@@ -86,12 +86,12 @@ async def process_all_course_command(message: Message):
 @dp.message_handler(Command(commands=['all_phrases']))
 async def process_all_phrases_command(message: Message):
     """Вернет пользователю в чат все фразы из бд"""
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        database_cursor = await database.cursor()
-        await database_cursor.execute('Select phrase from phrases')
-        mess = '\n'.join(i[0] for i in await database_cursor.fetchall())
-        await bot.send_message(message.chat.id, mess)
-        await database.commit()
+    async with db.async_session() as session:
+        query = select(db.Phrases.phrase)
+        res = await session.execute(query)
+        res = res.all()
+        answer = '\n'.join([i[0] for i in res])
+    await bot.send_message(message.chat.id, answer)
 
 
 # при вызове команды add
@@ -203,12 +203,12 @@ async def process_taboo_del_command(message: Message):
 async def process_taboo_all_command(message: Message):
     """действия при вызове комканды taboo_all -
     покажет список всех исключений"""
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        answer = await database.execute('Select name from NAME')
-        answer = await answer.fetchall()
-        answer_database = '\n'.join([i[0] for i in answer])
-        await bot.send_message(message.chat.id, answer_database)
-        await database.commit()
+    async with db.async_session() as session:
+        query = select(db.Name.name)
+        res = await session.execute(query)
+        res = res.all()
+        answer = '\n'.join([i[0] for i in res])
+    await bot.send_message(message.chat.id, answer)
 
 
 @dp.message_handler(Command(commands=['holiday']))
