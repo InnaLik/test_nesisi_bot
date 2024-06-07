@@ -1,6 +1,5 @@
+# изменить бд на сервере с primary key
 from typing import Annotated
-
-from sqlalchemy import Column, Integer, String, select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -9,6 +8,8 @@ engine = create_async_engine(url='sqlite+aiosqlite:///bot_nesibintelk.db',
 async_session = async_sessionmaker(engine)
 
 intpk = Annotated[int, mapped_column(primary_key=True)]
+
+
 class Base(DeclarativeBase):
     pass
 

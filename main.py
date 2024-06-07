@@ -8,15 +8,13 @@ from dataclasses import dataclass
 import logging
 import asyncio
 import pyowm
-import aiosqlite
 import pandas as pd
 import aioschedule
 from aiogram import Bot, Dispatcher, executor
 from aiogram.dispatcher.filters import Command
 from pycbrf import ExchangeRates
 from aiogram.types import Message
-from sqlalchemy import select
-
+from sqlalchemy import select, func, update, delete, insert
 from chat_id import my, sibintek
 import db
 
@@ -50,12 +48,8 @@ async def process_start_command(message: Message):
     """
     Этот handler будет срабатывать на команду "/start"
     """
-    async with db.async_session() as session:
-        inna = db.Name(name="Anna")
-        session.add(inna)
-        await session.commit()
-
-    await message.answer('Привет')
+    await message.answer(text='Привет, вызови команду /help, '
+                              'чтобы узнать список доступных команд')
 
 
 @dp.message_handler(Command(commands=["help"]))
@@ -98,60 +92,55 @@ async def process_all_phrases_command(message: Message):
 @dp.message_handler(Command(commands=['add']))
 async def process_add_command(message: Message):
     """добавит фразу в бд"""
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        phrase = ' '.join(message.text.split()[1:])
-        if len(phrase) > 0:
-            await database.execute("INSERT INTO phrases (phrase) VALUES (?)",
-                                   (phrase,))
+    phrase = ' '.join(message.text.split()[1:])
+    if len(phrase) > 0:
+        async with db.async_session() as session:
+            smtp = insert(db.Phrases).values(phrase=phrase)
+            await session.execute(smtp)
+            await session.commit()
             await bot.send_message(message.chat.id,
                                    f'фраза "{phrase}" добавлена')
-        else:
-            await bot.send_message(message.chat.id,
-                                   'фраза не должна быть пустой')
-        # без это строчки в конце данные не сохранятся в бд, она обязательна
-        await database.commit()
+    else:
+        await bot.send_message(message.chat.id,
+                               'фраза не должна быть пустой')
 
 
 # при вызове команды del
 @dp.message_handler(Command(commands=['del']))
 async def process_del_command(message: Message):
     """Удалит фразу из бд"""
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        # database_cursor = database.cursor()
-        phrase = ' '.join(message.text.split()[1:])
-        # сохраняем id фразы, если она была найдена, обязательно в переменную,
-        # иначе не сможем через fetch обратиться
-        answer = await database.execute(
-            'SELECT COUNT(id) from phrases where phrase = ?', (phrase,))
-        answer_database = await answer.fetchone()
-        if answer_database != (0,):
-            await database.execute('DELETE FROM phrases WHERE phrase = ?',
-                                   (phrase,))
+    phrase = ' '.join(message.text.split()[1:])
+    async with db.async_session() as session:
+        query = select(db.Phrases).filter_by(phrase=phrase)
+        res = await session.execute(query)
+        if res.all():
+            smtp = delete(db.Phrases).filter_by(phrase=phrase)
+            await session.execute(smtp)
+            await session.commit()
             await bot.send_message(message.chat.id,
                                    f'фраза "{phrase}" удалена')
         else:
             await bot.send_message(message.chat.id,
                                    'фразы не найдено, повторите попытку')
-        await database.commit()
 
 
 @dp.message_handler(Command(commands=['add_bad']))
 async def process_add_bad_command(message: Message):
     """Добавит слово, на которое бот будет реагировать в бд"""
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        word = ' '.join(message.text.lower().split()[1:])
-        answer = await database.execute(
-            'SELECT count(name) from NAME where name = ?', (word,))
-        answer_database = await answer.fetchone()
-        if answer_database == (0,) and len(word) != 0:
-            await database.execute('INSERT INTO bad_words (word) VALUES (?)',
-                                   (word,))
+    word = ' '.join(message.text.lower().split()[1:])
+    async with db.async_session() as session:
+        # проверка, что слова нет в таблице исключений
+        query = select(db.Name.id).filter_by(name=word)
+        res = await session.execute(query)
+        if not res.all() and len(word) != 0:
+            smtp = insert(db.BadWords).values(word=word)
+            await session.execute(smtp)
+            await session.commit()
             await bot.send_message(message.chat.id,
                                    f'слово <b>{word}</b> добавлено',
                                    parse_mode='html')
         else:
             await bot.send_message(message.chat.id, 'Такие слова не добавляю')
-        await database.commit()
 
 
 @dp.message_handler(Command(commands=['del_bad']))
@@ -159,44 +148,45 @@ async def process_del_bad_command(message: Message):
     """
     удалит слово из таблицы bad_words, если оно там есть
     """
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        word = ' '.join(message.text.lower().split()[1:])
-        answer = await database.execute(
-            'SELECT count(id) from bad_words where word = ?', (word,))
-        answer_database = await answer.fetchone()
-        if answer_database != (0,):
-            await database.execute('DELETE FROM bad_words WHERE word = ?',
-                                   (word,))
+    word = ' '.join(message.text.lower().split()[1:])
+    async with db.async_session() as session:
+        query = select(db.BadWords.id).filter_by(word=word)
+        res = await session.execute(query)
+        if res.all():
+            smtp = delete(db.BadWords).filter_by(word=word)
+            await session.execute(smtp)
+            await session.commit()
             await bot.send_message(message.chat.id, f'слово "{word}" удалено')
         else:
             await bot.send_message(message.chat.id, 'Такого слова нет')
-        await database.commit()
 
 
 @dp.message_handler(Command(commands=['taboo']))
 async def process_taboo_command(message: Message):
     """дeйствия при вызове команды taboo - добавляет слова в таблицу NAME,
     чтобы эти слова потом нельзя было добавить в таблицу bad_words"""
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        word = ' '.join(message.text.lower().split()[1:])
-        await database.execute('INSERT INTO NAME (name) VALUES (?)', (word,))
-        await bot.send_message(message.chat.id,
-                               f'слово "{word}" добавлено в список '
-                               f'исключений, его нельзя будет добавить в '
-                               f'таблицу bad_words')
-        await database.commit()
+    word = ' '.join(message.text.lower().split()[1:])
+    async with db.async_session() as session:
+        smtp = insert(db.Name).values(name=word)
+        await session.execute(smtp)
+        await session.commit()
+    await bot.send_message(message.chat.id,
+                           f'слово "{word}" добавлено в список '
+                           f'исключений, его нельзя будет добавить в '
+                           f'таблицу bad_words')
 
 
 @dp.message_handler(Command(commands=['taboo_del']))
 async def process_taboo_del_command(message: Message):
     """дeйствия при вызове команды taboo_del - удаляет слово из таблицы NAME"""
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        word = ' '.join(message.text.lower().split()[1:])
-        await database.execute('DELETE FROM NAME WHERE name = ?', (word,))
-        await bot.send_message(message.chat.id,
-                               f'слово "{word}" удалено из исключений и его '
-                               f'можно добавлять в таблицу bad_words')
-        await database.commit()
+    word = ' '.join(message.text.lower().split()[1:])
+    async with db.async_session() as session:
+        smtp = delete(db.Name).filter_by(name=word)
+        await session.execute(smtp)
+        await session.commit()
+    await bot.send_message(message.chat.id,
+                           f'слово "{word}" удалено из исключений и его '
+                           f'можно добавлять в таблицу bad_words')
 
 
 @dp.message_handler(Command(commands=['taboo_all']))
@@ -217,18 +207,17 @@ async def holiday(message: Message):
     список праздников сегодня"""
     day_now = datetime.today().day
     month_now = datetime.today().month
-    for_select = str(month_now).rjust(2, '0') + '-' + str(day_now)
-
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        answer = await database.execute(
-            'Select celebrate from holiday where date = ?', (for_select,))
-        answer = await answer.fetchall()
-        answer_database = '\n'.join([i[0] for i in answer])
-        await bot.send_message(message.chat.id,
-                               text=f'<b>Какой сегодня праздник</b>'
-                                    f'\n{answer_database}',
-                               parse_mode='html')
-        await database.commit()
+    for_select = str(month_now).rjust(2, '0') + '-' + str(day_now).rjust(2,
+                                                                         '0')
+    async with db.async_session() as session:
+        query = select(db.Holidays.celebrate).filter_by(date=for_select)
+        result = await session.execute(query)
+        res = result.all()
+    answer_database = '\n'.join([i[0] for i in res])
+    await bot.send_message(message.chat.id,
+                           text=f'<b>Какой сегодня праздник</b>'
+                                f'\n{answer_database}',
+                           parse_mode='html')
 
 
 @dp.message_handler(Command(commands=['weather']))
@@ -267,26 +256,25 @@ async def weather(message: Message):
 @dp.message_handler()
 async def all_text(message: Message):
     """обработка текстовых сообщений"""
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        mess = message.text.lower().split()
-        list_word = [i.strip(punctuation) for i in mess]
-        count_word = ['?' for _ in range(len(list_word))]
-        insert_db = ', '.join(count_word)
-        # в данной строчке мы берем каждое слово из написанного
-        # сообщения и проверяем есть ли слово в таблице bad_words
-        # чтобы соответственно понимать отреагировать на сообщение или нет
-        answer = await database.execute(
-            f'SELECT id FROM bad_words WHERE word IN ({insert_db})', list_word)
-        answer_database = await answer.fetchone()
-        if answer_database:
-            answer_message = await database.execute(
-                'select phrase from phrases order by random() limit 1')
-            answer_to_mess = await answer_message.fetchall()
-            await bot.send_message(message.chat.id, answer_to_mess[0][0])
-            await database.execute(
-                'UPDATE boys SET count = count + 1 WHERE id = ?',
-                (message.from_user.id,))
-        await database.commit()
+    mess = message.text.lower().split()
+    list_word = tuple([i.strip(punctuation) for i in mess])
+    # в данной строчке мы берем каждое слово из написанного
+    # сообщения и проверяем есть ли слово в таблице bad_words
+    # чтобы соответственно понимать отреагировать на сообщение или нет
+    async with db.async_session() as session:
+        query = select(db.BadWords.id).filter(db.BadWords.word.in_(list_word))
+        res = await session.execute(query)
+        res = res.all()
+        if res:
+            query = select(db.Phrases.phrase).order_by(func.random()).limit(1)
+            answer_message = await session.execute(query)
+            answer_message = answer_message.first()
+            await bot.send_message(message.chat.id, answer_message[0])
+            sub_smtp = select(db.Boys.count).filter_by(id=message.from_user.id)
+            smtp = update(db.Boys).values(count=sub_smtp.c.count + 1).where(
+                db.Boys.id == message.from_user.id)
+            await session.execute(smtp)
+            await session.commit()
 
 
 @dataclass
@@ -361,14 +349,14 @@ async def birthday():
     """
     dates = str(datetime.now().day).rjust(2, '0') + '.' + str(
         datetime.now().month).rjust(2, '0')
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        answer = await database.execute(
-            'SELECT name FROM birthday WHERE date = ?', (dates,))
-        answer_database = await answer.fetchone()
-        if answer_database is not None:
-            await bot.send_message(chat_id=sibintek,
+    async with db.async_session() as session:
+        query = select(db.Birthday.name).filter_by(date=dates)
+        res = await session.execute(query)
+        res = res.all()
+        if res:
+            await bot.send_message(chat_id=my,
                                    text=f'Сегодня свой день рождение '
-                                        f'празднует {answer_database[0]}! '
+                                        f'празднует {res[0][0]}! '
                                         f'Давайте все вместе поздравим его!')
 
 
@@ -403,44 +391,45 @@ async def check_out_boys():
     """
     Раз в неделю запуск скрипта с количеством слов
     """
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        answer = await database.execute('SELECT nick, MAX(count) FROM boys')
-        answer_database = await answer.fetchall()
-        await bot.send_message(chat_id=-1001214772818,
+    async with db.async_session() as session:
+        query = select(db.Boys.nick, func.max(db.Boys.count))
+        res = await session.execute(query)
+        answer_database = res.all()
+        await bot.send_message(chat_id=sibintek,
                                text=f'Больше всего сообщений с '
                                     f'нецензурными словами за последние '
                                     f'семь дней '
                                     f'поступило от {answer_database[0][0]} в '
                                     f'количестве {answer_database[0][1]}')
-        answer = await database.execute(
-            'Select nick, count from boys ORDER BY 2 DESC')
-        answer_database = await answer.fetchall()
+        query = select(db.Boys.nick, db.Boys.count).order_by(
+            db.Boys.count.desc())
+        res = await session.execute(query)
+        answer_database = res.all()
         text = '\n'.join([f'{i[0]} : {i[1]}' for i in answer_database])
         await bot.send_message(chat_id=sibintek,
                                text=f'Общая статистика: \n{text}')
-        await database.execute('UPDATE boys SET count = 0')
-        await database.commit()
+        smtp = update(db.Boys).values(count=0)
+        await session.execute(smtp)
+        await session.commit()
 
 
 # подумать над тем, чтобы данные где-то хранить, а не каждый раз
-# запрашивать их из бд
+# запрашивать их из бд/ хотя ...
 async def holiday_send():
-    """действия при вызове комканды holiday- покажет список
-     праздников сегодня"""
     day_now = datetime.today().day
     month_now = datetime.today().month
-    for_select = str(month_now).rjust(2, '0') + '-' + str(day_now)
-    async with aiosqlite.connect('bot_nesibintelk.db') as database:
-        answer = await database.execute(
-            'Select celebrate from holiday where date = ?', (for_select,))
-        answer = await answer.fetchall()
-        answer_database = '\n'.join([i[0] for i in answer])
-        answer_for_user = f'<b>Какой сегодня праздник</b>\n{answer_database}'
-        await bot.send_message(chat_id=my, text=answer_for_user,
-                               parse_mode='html')
-        answer_for_user = f'<b>Какой сегодня праздник</b>\n{answer_database}'
-        await bot.send_message(chat_id=sibintek, text=answer_for_user,
-                               parse_mode='html')
+    for_select = str(month_now).rjust(2, '0') + '-' + str(day_now).rjust(2,
+                                                                         '0')
+    async with db.async_session() as session:
+        query = select(db.Holidays.celebrate).filter_by(date=for_select)
+        result = await session.execute(query)
+        res = result.all()
+    answer_database = '\n'.join([i[0] for i in res])
+    await bot.send_message(chat_id=my, text=answer_database,
+                           parse_mode='html')
+    answer_for_user = f'<b>Какой сегодня праздник</b>\n{answer_database}'
+    await bot.send_message(chat_id=sibintek, text=answer_for_user,
+                           parse_mode='html')
 
 
 async def scheduler():
@@ -448,7 +437,7 @@ async def scheduler():
     Запуск скриптов по времени
     """
     aioschedule.every().day.at('09:00').do(greeting)
-    aioschedule.every().day.at("18:42").do(birthday)
+    aioschedule.every().day.at("09:03").do(birthday)
     aioschedule.every().day.at('11:55').do(send_course)
     aioschedule.every().day.at('12:00').do(check_apartment)
     aioschedule.every().friday.at('17:00').do(check_out_boys)
