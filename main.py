@@ -413,8 +413,6 @@ async def check_out_boys():
         await session.commit()
 
 
-# подумать над тем, чтобы данные где-то хранить, а не каждый раз
-# запрашивать их из бд/ хотя ...
 async def holiday_send():
     day_now = datetime.today().day
     month_now = datetime.today().month
@@ -437,7 +435,7 @@ async def scheduler():
     Запуск скриптов по времени
     """
     aioschedule.every().day.at('09:00').do(greeting)
-    aioschedule.every().day.at("09:03").do(birthday)
+    aioschedule.every().day.at('09:03').do(birthday)
     aioschedule.every().day.at('11:55').do(send_course)
     aioschedule.every().day.at('12:00').do(check_apartment)
     aioschedule.every().friday.at('17:00').do(check_out_boys)
