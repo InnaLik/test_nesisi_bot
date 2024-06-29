@@ -323,9 +323,6 @@ all_course_class = Clipboard()
 
 
 async def send_course():
-    # переделать - создать таблицу со всеми чатами, куда отправлять
-    # изменения курсак утром + добавить функционал по
-    # добавлению групп
     """
     Отправка курсов
     """
@@ -414,6 +411,9 @@ async def check_out_boys():
 
 
 async def holiday_send():
+    """
+    выборка из бд по дню с праздниками за сегодня
+    """
     day_now = datetime.today().day
     month_now = datetime.today().month
     for_select = str(month_now).rjust(2, '0') + '-' + str(day_now).rjust(2,
