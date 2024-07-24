@@ -432,7 +432,7 @@ async def holiday_send():
 
 async def scheduler():
     """
-    Запуск скриптов по времени
+    Запуск скриптов по времени в бесконечном цикле времени
     """
     aioschedule.every().day.at('09:00').do(greeting)
     aioschedule.every().day.at('09:03').do(birthday)
