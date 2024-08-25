@@ -31,7 +31,7 @@ dp: Dispatcher = Dispatcher(bot)
 
 async def loggingg():
     """
-    Функция для записи логов от уровня INFO и выше
+    Функция для записи логов от уровня INFO и выше.
     """
     logger = getLogger(__name__)
     logging.basicConfig(level=logging.INFO,
@@ -46,7 +46,10 @@ async def loggingg():
 @dp.message_handler(Command(commands=["start"]))
 async def process_start_command(message: Message):
     """
-    Этот handler будет срабатывать на команду "/start"
+    Этот handler будет срабатывать на команду "/start".
+
+    Args:
+        message: Сообщение, поступившее боту. В данном случае /start.
     """
     await message.answer(text='Привет, вызови команду /help, '
                               'чтобы узнать список доступных команд')
@@ -55,7 +58,10 @@ async def process_start_command(message: Message):
 @dp.message_handler(Command(commands=["help"]))
 async def process_help_commands(message: Message):
     """
-    При вызове команды /help
+    При вызове команды /help.
+
+    Args:
+        message: Сообщение, поступившее боту. В данном случае /help.
     """
     mess = '<b>/add</b> - добавляет фразу\n<b>/del</b> - удаляет фразу\n' \
            '<b>/all_phrases</b> - показывает все фразы в каталоге\n' \
@@ -70,7 +76,7 @@ async def process_help_commands(message: Message):
 @dp.message_handler(Command(commands=['all_course']))
 async def process_all_course_command(message: Message):
     """При вызове команды all_course бот вернет в чат с
-    пользователем сообщение о всех курсах на сегодняшний день"""
+    пользователем сообщение о всех курсах на сегодняшний день."""
     await all_course_class.get_all_course()
     mess = await all_course_class.get()
     await bot.send_message(message.chat.id, mess)
@@ -79,7 +85,7 @@ async def process_all_course_command(message: Message):
 # при вызове команда all_phrases
 @dp.message_handler(Command(commands=['all_phrases']))
 async def process_all_phrases_command(message: Message):
-    """Вернет пользователю в чат все фразы из бд"""
+    """Вернет пользователю в чат все фразы из бд."""
     async with db.async_session() as session:
         query = select(db.Phrases.phrase)
         res = await session.execute(query)
@@ -91,7 +97,7 @@ async def process_all_phrases_command(message: Message):
 # при вызове команды add
 @dp.message_handler(Command(commands=['add']))
 async def process_add_command(message: Message):
-    """добавит фразу в бд"""
+    """Добавит фразу в бд."""
     phrase = ' '.join(message.text.split()[1:])
     if len(phrase) > 0:
         async with db.async_session() as session:
@@ -108,7 +114,7 @@ async def process_add_command(message: Message):
 # при вызове команды del
 @dp.message_handler(Command(commands=['del']))
 async def process_del_command(message: Message):
-    """Удалит фразу из бд"""
+    """Удалит фразу из бд."""
     phrase = ' '.join(message.text.split()[1:])
     async with db.async_session() as session:
         query = select(db.Phrases).filter_by(phrase=phrase)
@@ -126,7 +132,7 @@ async def process_del_command(message: Message):
 
 @dp.message_handler(Command(commands=['add_bad']))
 async def process_add_bad_command(message: Message):
-    """Добавит слово, на которое бот будет реагировать в бд"""
+    """Добавит слово, на которое бот будет реагировать в бд."""
     word = ' '.join(message.text.lower().split()[1:])
     async with db.async_session() as session:
         # проверка, что слова нет в таблице исключений
@@ -145,9 +151,7 @@ async def process_add_bad_command(message: Message):
 
 @dp.message_handler(Command(commands=['del_bad']))
 async def process_del_bad_command(message: Message):
-    """
-    удалит слово из таблицы bad_words, если оно там есть
-    """
+    """Удалит слово из таблицы bad_words, если оно там есть."""
     word = ' '.join(message.text.lower().split()[1:])
     async with db.async_session() as session:
         query = select(db.BadWords.id).filter_by(word=word)
@@ -163,8 +167,8 @@ async def process_del_bad_command(message: Message):
 
 @dp.message_handler(Command(commands=['taboo']))
 async def process_taboo_command(message: Message):
-    """дeйствия при вызове команды taboo - добавляет слова в таблицу NAME,
-    чтобы эти слова потом нельзя было добавить в таблицу bad_words"""
+    """Дeйствия при вызове команды taboo - добавляет слова в таблицу NAME,
+    чтобы эти слова потом нельзя было добавить в таблицу bad_words."""
     word = ' '.join(message.text.lower().split()[1:])
     async with db.async_session() as session:
         smtp = insert(db.Name).values(name=word)
@@ -178,7 +182,10 @@ async def process_taboo_command(message: Message):
 
 @dp.message_handler(Command(commands=['taboo_del']))
 async def process_taboo_del_command(message: Message):
-    """дeйствия при вызове команды taboo_del - удаляет слово из таблицы NAME"""
+    """
+    Дeйствия при вызове команды taboo_del -
+    удаляет слово из таблицы NAME.
+    """
     word = ' '.join(message.text.lower().split()[1:])
     async with db.async_session() as session:
         smtp = delete(db.Name).filter_by(name=word)
@@ -191,8 +198,10 @@ async def process_taboo_del_command(message: Message):
 
 @dp.message_handler(Command(commands=['taboo_all']))
 async def process_taboo_all_command(message: Message):
-    """действия при вызове комканды taboo_all -
-    покажет список всех исключений"""
+    """
+    Действия при вызове комканды taboo_all -
+    покажет список всех исключений.
+    """
     async with db.async_session() as session:
         query = select(db.Name.name)
         res = await session.execute(query)
@@ -203,8 +212,10 @@ async def process_taboo_all_command(message: Message):
 
 @dp.message_handler(Command(commands=['holiday']))
 async def holiday(message: Message):
-    """действия при вызове комканды holiday- покажет
-    список праздников сегодня"""
+    """
+    Действия при вызове комканды holiday- покажет
+    список праздников сегодня.
+    """
     day_now = datetime.today().day
     month_now = datetime.today().month
     for_select = str(month_now).rjust(2, '0') + '-' + str(day_now).rjust(2,
@@ -222,9 +233,7 @@ async def holiday(message: Message):
 
 @dp.message_handler(Command(commands=['weather']))
 async def weather(message: Message):
-    """
-    Покажет погоду на ближайший час
-    """
+    """Покажет погоду на ближайший час."""
     own = pyowm.OWM(API_WEATHER)
     mgr = own.weather_manager()
     observation = mgr.weather_at_coords(45.02, 38.59)
@@ -255,7 +264,7 @@ async def weather(message: Message):
 
 @dp.message_handler()
 async def all_text(message: Message):
-    """обработка текстовых сообщений"""
+    """Обработка текстовых сообщений."""
     mess = message.text.lower().split()
     list_word = tuple([i.strip(punctuation) for i in mess])
     # в данной строчке мы берем каждое слово из написанного
@@ -279,22 +288,20 @@ async def all_text(message: Message):
 
 @dataclass
 class Clipboard:
-    """
-    для получения курса валют
-    """
+    """Для получения курса валют."""
     course_dollar: str = ''
     course_ali: str = ''
     course_euro: str = ''
 
     @staticmethod
     async def get_dollar():
-        """для получения курса доллара"""
+        """Для получения курса доллара."""
         rates = ExchangeRates(datetime.now())
         return str(rates['USD'].value)[0:5]
 
     @staticmethod
     async def get_ali():
-        """для получения курса али"""
+        """Для получения курса али."""
         tables = pd.read_html('https://helpix.ru/currency/')
         for df in tables:
             if 'Aliexpress.ru' in df.columns:
@@ -302,18 +309,18 @@ class Clipboard:
 
     @staticmethod
     async def get_euro():
-        """для получения курса евро"""
+        """Для получения курса евро."""
         rates = ExchangeRates(datetime.now())
         return str(rates['EUR'].value)[0:5]
 
     async def get_all_course(self):
-        """ Запись курсов в переменные"""
+        """Запись курсов в переменные."""
         self.course_dollar = await self.get_dollar()
         self.course_euro = await self.get_euro()
         self.course_ali = await self.get_ali()
 
     async def get(self):
-        """Получение всех курсов"""
+        """Получение всех курсов."""
         return f'курс доллара: {self.course_dollar}\n' \
                f'курс евро: {self.course_euro}\n' \
                f'курс али: {self.course_ali}'
@@ -323,9 +330,7 @@ all_course_class = Clipboard()
 
 
 async def send_course():
-    """
-    Отправка курсов
-    """
+    """Отправка курсов."""
     await all_course_class.get_all_course()
     mess = await all_course_class.get()
     await bot.send_message(chat_id=my, text=mess)
@@ -333,17 +338,13 @@ async def send_course():
 
 
 async def check_apartment():
-    """
-    Напоминание по подаче данных
-    """
+    """Напоминание по подаче данных."""
     if datetime.now().day == 19:
         await bot.send_message(chat_id=my, text='Подать данные по коммуналке')
 
 
 async def birthday():
-    """
-    Поздравление с днем рождения
-    """
+    """Поздравление с днем рождения."""
     dates = str(datetime.now().day).rjust(2, '0') + '.' + str(
         datetime.now().month).rjust(2, '0')
     async with db.async_session() as session:
@@ -358,9 +359,7 @@ async def birthday():
 
 
 async def send_weather():
-    """
-    Запрос и отправка погоды
-    """
+    """Запрос и отправка погоды."""
     own = pyowm.OWM(API_WEATHER)
     mgr = own.weather_manager()
     observation = mgr.weather_at_place('Krasnodar')
@@ -378,16 +377,12 @@ async def send_weather():
 
 
 async def greeting():
-    """
-    Приветствие бота с утра
-    """
+    """Приветствие бота с утра."""
     await bot.send_message(chat_id=sibintek, text='Доброе утро, 36.6')
 
 
 async def check_out_boys():
-    """
-    Раз в неделю запуск скрипта с количеством слов
-    """
+    """Раз в неделю запуск скрипта с количеством слов."""
     async with db.async_session() as session:
         query = select(db.Boys.nick, func.max(db.Boys.count))
         res = await session.execute(query)
@@ -411,9 +406,7 @@ async def check_out_boys():
 
 
 async def holiday_send():
-    """
-    выборка из бд по дню с праздниками за сегодня
-    """
+    """Выборка из бд по дню с праздниками за сегодня."""
     day_now = datetime.today().day
     month_now = datetime.today().month
     for_select = str(month_now).rjust(2, '0') + '-' + str(day_now).rjust(2,
@@ -431,9 +424,7 @@ async def holiday_send():
 
 
 async def scheduler():
-    """
-    Запуск скриптов по времени в бесконечном цикле времени
-    """
+    """Запуск скриптов по времени в бесконечном цикле времени."""
     aioschedule.every().day.at('09:00').do(greeting)
     aioschedule.every().day.at('09:03').do(birthday)
     aioschedule.every().day.at('11:55').do(send_course)
@@ -449,9 +440,7 @@ async def scheduler():
 
 
 async def on_startup(_):
-    """
-    Запуск обработчика времени и логов
-    """
+    """Запуск обработчика времени и логов."""
     asyncio.create_task(scheduler())
     asyncio.create_task(loggingg())
 
