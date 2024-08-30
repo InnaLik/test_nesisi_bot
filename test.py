@@ -8,4 +8,4 @@ from main import process_start_command
 async def test_start_handler():
     message = AsyncMock()
     await process_start_command(message)
-    message.answer.assert_called_with('Привет')
+    message.answer.assert_called_with('Привет, пользователь')
