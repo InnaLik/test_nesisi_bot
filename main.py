@@ -72,7 +72,6 @@ async def process_help_commands(message: Message):
     await bot.send_message(message.chat.id, mess, parse_mode='html')
 
 
-# при вызове команды all_course
 @dp.message_handler(Command(commands=['all_course']))
 async def process_all_course_command(message: Message):
     """При вызове команды all_course бот вернет в чат с
